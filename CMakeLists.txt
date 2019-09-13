@@ -13,25 +13,43 @@ if(WIN32)
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 endif(WIN32)
 
-link_directories(${CMAKE_SOURCE_DIR}/lib)
+
+#link_directories(${CMAKE_SOURCE_DIR}/lib)
+# Compile external dependencies
+add_subdirectory (external)
+include_directories(
+        external/AntTweakBar-1.16/include/
+        external/glfw-3.1.2/include/
+        external/glm-0.9.7.1/
+        external/glew-1.13.0/include/
+        external/assimp-3.0.1270/include/
+        external/bullet-2.81-rev2613/src/
+        external/glad-0.1.33/include/
+        external/stbImage-2.14/include/
+        external/common/
+        .
+)
+
+set(LIBS
+        ${OPENGL_LIBRARY}
+        glfw
+        GLEW_1130
+        GLAD_0133
+        STD_IMAME_2140
+        )
+
+add_definitions(
+        -DTW_STATIC
+        -DTW_NO_LIB_PRAGMA
+        -DTW_NO_DIRECT3D
+        -DGLEW_STATIC
+        -D_CRT_SECURE_NO_WARNINGS
+)
+
 
 list(APPEND CMAKE_CXX_FLAGS "-std=c++11")
 
-# find the required packages
-find_package(GLM REQUIRED)
-message(STATUS "GLM included at ${GLM_INCLUDE_DIR}")
-find_package(GLFW3 REQUIRED)
-message(STATUS "Found GLFW3 in ${GLFW3_INCLUDE_DIR}")
-find_package(ASSIMP REQUIRED)
-message(STATUS "Found ASSIMP in ${ASSIMP_INCLUDE_DIR}")
-# find_package(SOIL REQUIRED)
-# message(STATUS "Found SOIL in ${SOIL_INCLUDE_DIR}")
-# find_package(GLEW REQUIRED)
-# message(STATUS "Found GLEW in ${GLEW_INCLUDE_DIR}")
-
-if(WIN32)
-  set(LIBS glfw3 opengl32 assimp)
-elseif(UNIX AND NOT APPLE)
+if(UNIX AND NOT APPLE)
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
   find_package(OpenGL REQUIRED)
   add_definitions(${OPENGL_DEFINITIONS})
@@ -50,9 +68,7 @@ elseif(APPLE)
   SET(APPLE_LIBS ${COCOA_LIBRARY} ${IOKit_LIBRARY} ${OpenGL_LIBRARY} ${CoreVideo_LIBRARY})
   SET(APPLE_LIBS ${APPLE_LIBS} ${GLFW3_LIBRARY} ${ASSIMP_LIBRARY})
   set(LIBS ${LIBS} ${APPLE_LIBS})
-else()
-  set(LIBS )
-endif(WIN32)
+endif(UNIX AND NOT APPLE)
 
 set(CHAPTERS
     1.getting_started
@@ -169,13 +185,6 @@ set(7.in_practice
 configure_file(configuration/root_directory.h.in configuration/root_directory.h)
 include_directories(${CMAKE_BINARY_DIR}/configuration)
 
-# first create relevant static libraries requried for other projects
-add_library(STB_IMAGE "src/stb_image.cpp")
-set(LIBS ${LIBS} STB_IMAGE)
-
-add_library(GLAD "src/glad.c")
-set(LIBS ${LIBS} GLAD)
-
 macro(makeLink src dest target)
   add_custom_command(TARGET ${target} POST_BUILD COMMAND ${CMAKE_COMMAND} -E create_symlink ${src} ${dest}  DEPENDS  ${dest} COMMENT "mklink ${src} -> ${dest}")
 endmacro()
@@ -228,4 +237,3 @@ foreach(CHAPTER ${CHAPTERS})
     endforeach(DEMO)
 endforeach(CHAPTER)
 
-include_directories(${CMAKE_SOURCE_DIR}/includes)
